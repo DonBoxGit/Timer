@@ -1,0 +1,9 @@
+# comment
+TimerClock	KEYWORD1
+Element	KEYWORD1
+
+readTime	KEYWORD2
+writeTime	KEYWORD2
+resetTime	KEYWORD2
+getTime	KEYWORD2
+changeTime	KEYWORD2

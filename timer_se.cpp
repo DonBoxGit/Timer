@@ -1,12 +1,46 @@
 #include "timer_se.h"
-
-/*************************Подключаем SSD1306********************************/
-Adafruit_SSD1306 display(128, 32, &Wire,   OLED_RESET);
-/*************************Подключаем Энкодер********************************/
-Encoder encoder(SLK, DT, SW);
 /**********************Вектро Прерывания TIMER1*****************************/
 ISR (TIMER1_COMPA_vect) {
   timerClick = true;
+}
+
+String TimerClock::getTime(TimerClock::Element &elem){
+  String str = "0";
+  switch(elem){
+    case HOURS:   (hours < 10)   ? str += hours   : str = hours;
+    case MINUTES: (minutes < 10) ? str += minutes : str = minutes;
+    case SECONDS: (seconds < 10) ? str += seconds : str = seconds;
+    return str;
+  }
+  
+}
+
+void TimerClock::changeTime(TimerClock::Element &elem, bool dir) {
+  if      (elem == HOURS   &&  dir)  (hours > 22)   ? hours = 0  : ++hours;
+  else if (elem == HOURS   && !dir)  (hours < 1)    ? hours = 23 : --hours;
+  if      (elem == MINUTES &&  dir)  (minutes   > 58)   ? minutes = 0    : ++minutes;
+  else if (elem == MINUTES && !dir)  (minutes   < 1)    ? minutes = 59   : --minutes;
+  if      (elem == SECONDS &&  dir)  (seconds   > 58)   ? seconds = 0    : ++seconds;
+  else if (elem == SECONDS && !dir)  (seconds   < 1)    ? seconds = 59   : --seconds;
+  draw_led(elem, menu_level);
+}
+
+void TimerClock::readTime(){
+  this -> hours   = EEPROM.read(0);
+  this -> minutes = EEPROM.read(1);
+  this -> seconds = EEPROM.read(2);
+}
+
+void TimerClock::writeTime(){
+  EEPROM.update(0, this -> hours);
+  EEPROM.update(1, this -> minutes);
+  EEPROM.update(2, this -> seconds);
+}
+
+void TimerClock::resetTime() {
+  this -> hours   = 0;
+  this -> minutes = 0;
+  this -> seconds = 0;
 }
 
 void countdown_timer() {
@@ -23,7 +57,7 @@ void countdown_timer() {
   TCNT1 = 0x00;            // Сбрасываем Счетный Регистр TCNT1
   TIMSK1 |= (1 << OCIE1A); // Включаем Прерывания
   sei();
-  ++sec_t;                 // Увеличиваем на 1 секунду т.к. timerClick = true
+  bool flag = false;
   while (true) {
     encoder.tick();
     if (encoder.isClick() && menu_level == COUNTDOWN && val == STOP) // Нажали STOP
@@ -46,6 +80,7 @@ void countdown_timer() {
       digitalWrite(OUT_PIN, LOW);
       break;
     }
+    if(!flag){flag = true; timerClick = false;} // Предотвращение отсчета времени сразу
     // Таймер Обратного Отсчета
     if (timerClick) {
       timerClick = false;
@@ -68,35 +103,6 @@ void countdown_timer() {
  }
   /********************End Of CounterTimer********************/
   TIMSK1 &= ~(1 << OCIE1A); // Сброс Бита OCIE1A (INTERUPT OFF)
-}
-
-
-void writeTime(){
-  EEPROM.update(0, hours_t);
-  EEPROM.update(1, min_t);
-  EEPROM.update(2, sec_t);
-}
-
-void readTime(){
-  hours_t = EEPROM.read(0);
-  min_t   = EEPROM.read(1);
-  sec_t   = EEPROM.read(2);
-}
-
-void reset() {
-  hours_t = 0;
-  min_t   = 0;
-  sec_t   = 0;
-}
-
-void edit_time(int8_t &elem, bool dir) {
-  if      (elem == HOURS   &&  dir)  (hours_t > 22)   ? hours_t = 0  : ++hours_t;
-  else if (elem == HOURS   && !dir)  (hours_t < 1)    ? hours_t = 23 : --hours_t;
-  if      (elem == MINUTES &&  dir)  (min_t   > 58)   ? min_t = 0    : ++min_t;
-  else if (elem == MINUTES && !dir)  (min_t   < 1)    ? min_t = 59   : --min_t;
-  if      (elem == SECONDS &&  dir)  (sec_t   > 58)   ? sec_t = 0    : ++sec_t;
-  else if (elem == SECONDS && !dir)  (sec_t   < 1)    ? sec_t = 59   : --sec_t;
-  draw_led(elem, menu_level);
 }
 
 void draw_led(int8_t &num, int8_t &level) {
