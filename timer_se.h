@@ -23,17 +23,17 @@ class TimerClock {
       MINUTES,
       SECONDS
     };
-    void readTime (void);
-    void writeTime(void);
-    void resetTime(void);
-    String getTime(TimerClock::Element&);
-    void changeTime(TimerClock::Element&, bool);
-    void changeTime(TimerClock::Element&, int8_t);
+    void   readRomTime (void);
+    void   writeRomTime(void);
+    void   resetTime(void);
+    String getTime(const TimerClock::Element&);
+    void   changeTime(const TimerClock::Element&, bool);
+    void   changeTime(const TimerClock::Element&, int8_t);
   private:
     uint8_t hours   = 0;
     uint8_t minutes = 0;
     uint8_t seconds = 0;
-    void ctrlRange(TimerClock::Element&, int8_t*);
+    void ctrlRange(const TimerClock::Element&, int8_t*);
 };
 
 int8_t val = 0;                   // Переменая Счетчик Энкодера

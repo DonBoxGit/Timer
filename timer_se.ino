@@ -1,10 +1,10 @@
 /******************************************************************************
- *                              Timer v.1.1                                   *
+                                Timer v.1.1
  *                                                                            *
- *                          by Roman Yakubovskiy                              *
+                            by Roman Yakubovskiy
  ******************************************************************************/
 #include "timer_se.h"
-TimerClock timer; 
+TimerClock timer;
 /*************************Подключаем SSD1306********************************/
 Adafruit_SSD1306 display(128, 32, &Wire,   OLED_RESET);
 /*************************Подключаем Энкодер********************************/
@@ -34,20 +34,40 @@ void setup() {
   // TIMSK1 |= (1 << OCIE1A); // Разрешаем Прерывания по Совпадению
   sei();                      // Включить Глобальное Прерывание
   delay(1000);
-  timer.readTime();     // Считываем Время из EEPROM
+
+  timer.readRomTime();     // Считываем Время из EEPROM
+  draw();
 }
 
 void loop() {
   encoder.tick();
   if (encoder.isRight()) {
     tone(SPEAKER_PIN, 150, 20);
+    timer.changeTime(TimerClock::Element::HOURS, true);
+    draw();
   }
   if (encoder.isLeft()) {
-   
     tone(SPEAKER_PIN, 150, 20);
+    timer.changeTime(TimerClock::Element::HOURS, false);
+    draw();
   }
 
   if (encoder.isClick()) {
-    tone(SPEAKER_PIN, 250, 40); 
+    tone(SPEAKER_PIN, 250, 40);
   }
+
+}
+
+void draw() {
+  // Header of LED Timer
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setCursor(19, 3);
+  display.setTextColor(WHITE);
+  display.print(timer.getTime(TimerClock::Element::HOURS));
+  display.print(":");
+  display.print(timer.getTime(TimerClock::Element::MINUTES));
+  display.print(":");
+  display.print(timer.getTime(TimerClock::Element::SECONDS));
+  display.display();
 }
