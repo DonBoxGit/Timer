@@ -1,9 +1,26 @@
-# comment
-TimerClock	KEYWORD1
-Element	KEYWORD1
+#######################################
+# Syntax Coloring Map For TimerClock  #
+#######################################
 
+# Datatypes (KEYWORD1)
+TimerClock	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
 readTime	KEYWORD2
 writeTime	KEYWORD2
 resetTime	KEYWORD2
 getTime	KEYWORD2
 changeTime	KEYWORD2
+ctrlRange	KEYWORD2
+
+# Constants (LITERAL1)
+
+TYPE1	LITERAL1
+TYPE2	LITERAL1
+MANUAL	LITERAL1
+AUTO	LITERAL1
+NORM	LITERAL1
+REVERSE	LITERAL1
+HOURS	LITERAL1
+MINUTES	LITERAL1
+SECONDS	LITERAL1
