@@ -4,18 +4,15 @@ ISR (TIMER1_COMPA_vect) {
   timerClick = true;
 }
 
-String TimerClock::getTime(TimerClock::Element &elem){
+String TimerClock::getTime(const TimerClock::Element &elem){
   String str = "0";
-  switch(elem){
-    case HOURS:   (hours < 10)   ? str += hours   : str = hours;
-    case MINUTES: (minutes < 10) ? str += minutes : str = minutes;
-    case SECONDS: (seconds < 10) ? str += seconds : str = seconds;
-    return str;
-  }
-  
+    if(elem == HOURS)   (hours < 10)   ? str += hours   : str = hours;
+    if(elem == MINUTES) (minutes < 10) ? str += minutes : str = minutes;
+    if(elem == SECONDS) (seconds < 10) ? str += seconds : str = seconds;
+    return str; 
 }
 
-void TimerClock::changeTime(TimerClock::Element &elem, bool dir) {
+void TimerClock::changeTime(const TimerClock::Element &elem, bool dir) {
   if(elem == HOURS){
     (dir) ? ++hours : --hours;
     ctrlRange(elem, &hours);
@@ -30,14 +27,14 @@ void TimerClock::changeTime(TimerClock::Element &elem, bool dir) {
   }
 }
 
-void TimerClock::changeTime(TimerClock::Element &elem, int8_t num){
+void TimerClock::changeTime(const TimerClock::Element &elem, int8_t num){
   ctrlRange(elem, &num);
   if(elem == HOURS)   this -> hours   = num;
   if(elem == MINUTES) this -> minutes = num;
   if(elem == SECONDS) this -> seconds = num;
 }
 
-void TimerClock::ctrlRange(TimerClock::Element &elem, int8_t *param){
+void TimerClock::ctrlRange(const TimerClock::Element &elem, int8_t *param){
   if(elem == MINUTES || elem == SECONDS){
     if(*param > 59) *param = 0;
     if(*param < 0 ) *param = 59;
@@ -47,13 +44,13 @@ void TimerClock::ctrlRange(TimerClock::Element &elem, int8_t *param){
   }
 }
 
-void TimerClock::readTime(){
+void TimerClock::readRomTime(){
   this -> hours   = EEPROM.read(0);
   this -> minutes = EEPROM.read(1);
   this -> seconds = EEPROM.read(2);
 }
 
-void TimerClock::writeTime(){
+void TimerClock::writeRomTime(){
   EEPROM.update(0, this -> hours);
   EEPROM.update(1, this -> minutes);
   EEPROM.update(2, this -> seconds);
