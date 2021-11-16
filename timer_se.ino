@@ -1,6 +1,6 @@
 /******************************************************************************
  *                               Timer v.1.1                                  *
- *                  A simple timer                                            *
+ *                     A simple timer for kitchen methers                     *
  *                  Add class TimerClock                                      *
  *                          by Roman Yakubovskiy                              *
  ******************************************************************************/
@@ -18,15 +18,44 @@
 
 #include <Adafruit_SSD1306.h>
 #include <GyverEncoder.h> 
-#include "timer_se.h"
+#include "timerclock.h"
 TimerClock timer; // Создаем объект таймера
 /***************************Подключаем SSD1306********************************/
 Adafruit_SSD1306 display(128, 32, &Wire,   OLED_RESET);
 /***************************Подключаем Энкодер********************************/
 Encoder encoder(SLK, DT, SW);
 
+enum ElementTimer {
+  START,
+  EDIT,
+  HOURS,
+  MINUTES,
+  SECONDS,
+  APPLY,
+  CLEAR,
+  STOP
+};
+
+enum MenuLevel {
+  MAIN,
+  EDIT_MENU,
+  EDIT_TIME,
+  COUNTDOWN,
+  MESSAGE_SCREEN,
+  ALERT
+};
+
+/**********************Вектро Прерывания TIMER1*****************************/
+//ISR (TIMER1_COMPA_vect) {
+//  timerClick = true;
+//}
+
+int8_t val = 0;
+MenuLevel menuLevel       = MAIN;
+//ElementTimer elementTimer = START;
+//TimerClock::Element elementTimer;
 void setup() {
-  //Serial.begin(9600);
+  Serial.begin(9600);
   pinMode(SPEAKER_PIN, OUTPUT);
   pinMode(OUT_PIN, OUTPUT);
   encoder.setType(TYPE2);         // Тип Энкодера
@@ -49,40 +78,187 @@ void setup() {
   // TIMSK1 |= (1 << OCIE1A); // Разрешаем Прерывания по Совпадению
   sei();                      // Включить Глобальное Прерывание
   delay(1000);
-
   timer.readRomTime();        // Считываем Время из EEPROM
-  draw();
+  draw_led(val, menuLevel);
 }
 
 void loop() {
   encoder.tick();
   if (encoder.isRight()) {
+    if(menuLevel == MAIN)      draw_led(++val, menuLevel);
+    if(menuLevel == EDIT_MENU) draw_led(++val, menuLevel);
+    if(menuLevel == EDIT_TIME){
+      timer.changeTime(timer.elementTimer, true);
+      draw_led(val, menuLevel);
+    }
     tone(SPEAKER_PIN, 150, 20);
-    timer.changeTime(TimerClock::Element::HOURS, true);
-    draw();
   }
   if (encoder.isLeft()) {
+    if(menuLevel == MAIN)      draw_led(--val, menuLevel);
+    if(menuLevel == EDIT_MENU) draw_led(--val, menuLevel);
+    if(menuLevel == EDIT_TIME){
+      timer.changeTime(timer.elementTimer, false);
+      draw_led(val, menuLevel);
+    }
     tone(SPEAKER_PIN, 150, 20);
-    timer.changeTime(TimerClock::Element::HOURS, false);
-    draw();
   }
 
   if (encoder.isClick()) {
+    if(menuLevel == MAIN && val == EDIT) {
+      menuLevel = EDIT_MENU;
+      val = HOURS;
+      draw_led(val, menuLevel);
+    }else if(menuLevel == EDIT_MENU && val == CLEAR){
+      timer.resetTime();
+      draw_led(val, menuLevel);
+    }else if(menuLevel == EDIT_MENU && val == APPLY){
+      menuLevel = MAIN;
+      draw_led(val, menuLevel);
+    }else if(menuLevel == EDIT_MENU && val == HOURS){
+      timer.elementTimer = TimerClock::Element::HOURS;
+      menuLevel = EDIT_TIME;
+      draw_led(val, menuLevel);
+    }else if(menuLevel == EDIT_MENU && val == MINUTES){
+      timer.elementTimer = TimerClock::Element::MINUTES;
+      menuLevel = EDIT_TIME;
+      draw_led(val, menuLevel);
+    }else if(menuLevel == EDIT_MENU && val == SECONDS){
+      timer.elementTimer = TimerClock::Element::SECONDS;
+      menuLevel = EDIT_TIME;
+      draw_led(val, menuLevel);
+    }else if(menuLevel == EDIT_TIME){
+      menuLevel = EDIT_MENU;
+      draw_led(val, menuLevel);
+    }
     tone(SPEAKER_PIN, 250, 40);
   }
 
 }
 
-void draw() {
-  // Header of LED Timer
-  display.clearDisplay();
+void header(void){
+  // Header of TimerClock
+  //display.drawRoundRect(0, 0, 128, 32, 0, WHITE);
   display.setTextSize(2);
-  display.setCursor(19, 3);
+  display.setCursor(16, 3);
   display.setTextColor(WHITE);
-  display.print(timer.getTime(TimerClock::Element::HOURS));
+  display.print(timer.getTime(timer.HOURS));
   display.print(":");
-  display.print(timer.getTime(TimerClock::Element::MINUTES));
+  display.print(timer.getTime(timer.MINUTES));
   display.print(":");
-  display.print(timer.getTime(TimerClock::Element::SECONDS));
+  display.print(timer.getTime(timer.SECONDS)); 
+}
+
+void draw_led(int8_t &param, const MenuLevel &level) {  
+  display.clearDisplay();
+  // Dynamic footer
+  switch(level){
+    case MAIN:
+      header();
+      if(param > EDIT)  param = START;
+      if(param < START) param = EDIT;
+      display.setTextSize(1);
+      display.setCursor(31, 23);
+      if(param == START){
+        display.fillRoundRect(28, 22, 35, 9, 3, WHITE);
+        display.setTextColor(BLACK);
+        display.print("START");
+      }else{
+        display.setTextColor(WHITE);
+        display.print("START");
+      }
+      display.print("  ");
+
+      if(param == EDIT){
+        display.fillRoundRect(69, 22, 30, 9, 3, WHITE);
+        display.setTextColor(BLACK);
+        display.print("EDIT");
+      }else{
+        display.setTextColor(WHITE);
+        display.print("EDIT");
+      }
+    break;
+    
+    case EDIT_MENU:
+      header();
+      if(param > CLEAR) param = HOURS;
+      if(param < HOURS) param = CLEAR;
+      display.setTextSize(1);
+      display.setCursor(25, 23);
+
+      if(param == HOURS)   display.drawRoundRect(14, 0, 27, 20, 3, WHITE);
+      if(param == MINUTES) display.drawRoundRect(50, 0, 27, 20, 3, WHITE);
+      if(param == SECONDS) display.drawRoundRect(86, 0, 27, 20, 3, WHITE);
+
+      if(param == APPLY){
+        display.fillRoundRect(22, 22, 35, 9, 3, WHITE);
+        display.setTextColor(BLACK);
+        display.print("APPLY");
+      }else{
+        display.setTextColor(WHITE);
+        display.print("APPLY");
+      }
+      display.print("   ");
+
+      if(param == CLEAR){
+        display.fillRoundRect(70, 22, 35, 9, 3, WHITE);
+        display.setTextColor(BLACK);
+        display.print("CLEAR");
+      }else{
+        display.setTextColor(WHITE);
+        display.print("CLEAR");
+      }
+    break;
+
+    case EDIT_TIME:
+      display.setTextSize(2);
+      display.setCursor(16, 3);
+      if(param == HOURS){
+        display.fillRoundRect(13, 0, 28, 20, 3, WHITE);
+        display.setTextColor(BLACK);
+      }else{
+        display.setTextColor(WHITE);
+      }
+      display.print(timer.getTime(timer.Element::HOURS));
+      display.setTextColor(WHITE);
+      display.print(":");
+
+      if(param == MINUTES){
+        display.fillRoundRect(49, 0, 28, 20, 3, WHITE);
+        display.setTextColor(BLACK);
+      }else{
+        display.setTextColor(WHITE);
+      }
+      display.print(timer.getTime(timer.Element::MINUTES));
+      display.setTextColor(WHITE);
+      display.print(":");
+      
+      if(param == SECONDS){
+        display.fillRoundRect(85, 0, 28, 20, 3, WHITE);
+        display.setTextColor(BLACK);
+      }else{
+        display.setTextColor(WHITE);
+      }
+      display.print(timer.getTime(timer.Element::SECONDS));
+      display.setTextColor(WHITE);
+      // Drawing the fake footer for the beautiful vision
+      display.setTextSize(1);
+      display.setCursor(25, 23);
+      display.print("APPLY");
+      display.print("   ");
+      display.print("CLEAR");  
+    break;
+
+    case COUNTDOWN:
+       header();
+    break;
+
+    case MESSAGE_SCREEN:
+
+    break;
+
+    case ALERT:
+
+    break;
+  }
   display.display();
 }

@@ -1,12 +1,8 @@
-#include "timer_se.h"
-/**********************Вектро Прерывания TIMER1*****************************/
-ISR (TIMER1_COMPA_vect) {
-  timerClick = true;
-}
+#include "timerclock.h"
 
 String TimerClock::getTime(const TimerClock::Element &elem){
   String str = "0";
-    if(elem == HOURS)   (hours < 10)   ? str += hours   : str = hours;
+    if(elem == HOURS)   (hours   < 10) ? str += hours   : str = hours;
     if(elem == MINUTES) (minutes < 10) ? str += minutes : str = minutes;
     if(elem == SECONDS) (seconds < 10) ? str += seconds : str = seconds;
     return str; 
