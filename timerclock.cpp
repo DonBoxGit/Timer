@@ -1,6 +1,12 @@
 #include "timerclock.h"
 
-String TimerClock::getTime(const TimerClock::Element &elem){
+uint8_t TimerClock::getTime(const TimerClock::Element &elem){
+  if(elem == HOURS)   return hours;
+  if(elem == MINUTES) return minutes;
+  if(elem == SECONDS) return seconds;
+}
+
+String TimerClock::getTimeString(const TimerClock::Element &elem){
   String str = "0";
     if(elem == HOURS)   (hours   < 10) ? str += hours   : str = hours;
     if(elem == MINUTES) (minutes < 10) ? str += minutes : str = minutes;
@@ -40,19 +46,19 @@ void TimerClock::ctrlRange(const TimerClock::Element &elem, int8_t *param){
   }
 }
 
-void TimerClock::readRomTime(){
+void TimerClock::readRomTime(void){
   this -> hours   = EEPROM.read(0);
   this -> minutes = EEPROM.read(1);
   this -> seconds = EEPROM.read(2);
 }
 
-void TimerClock::writeRomTime(){
+void TimerClock::writeRomTime(void){
   EEPROM.update(0, this -> hours);
   EEPROM.update(1, this -> minutes);
   EEPROM.update(2, this -> seconds);
 }
 
-void TimerClock::resetTime() {
+void TimerClock::resetTime(void) {
   this -> hours   = 0;
   this -> minutes = 0;
   this -> seconds = 0;
