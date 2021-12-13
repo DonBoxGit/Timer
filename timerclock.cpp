@@ -1,9 +1,9 @@
 #include "timerclock.h"
 
 uint8_t TimerClock::getTime(const TimerClock::Element &elem){
-  if(elem == HOURS)   return hours;
-  if(elem == MINUTES) return minutes;
-  if(elem == SECONDS) return seconds;
+  if(elem == HOURS)   return this -> hours;
+  if(elem == MINUTES) return this -> minutes;
+  if(elem == SECONDS) return this -> seconds;
 }
 
 String TimerClock::getTimeString(const TimerClock::Element &elem){

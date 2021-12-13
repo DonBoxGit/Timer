@@ -1,6 +1,6 @@
 /******************************************************************************
  *                               Timer v.1.2                                  *
- *                     A simple timer for kitchen methers                     *
+ *               A simple timer for kitchen or other occasions                *
  *                  Add class TimerClock                                      *
  *                          by Roman Yakubovskiy                              *
  ******************************************************************************/
@@ -19,11 +19,12 @@
 #include <Adafruit_SSD1306.h>
 #include <GyverEncoder.h>
 #include "timerclock.h"
-TimerClock timer; // Создаем объект таймера
 /***************************Подключаем SSD1306********************************/
 Adafruit_SSD1306 display(128, 32, &Wire,   OLED_RESET);
 /***************************Подключаем Энкодер********************************/
 Encoder encoder(SLK, DT, SW);
+/*************************Создаем объект таймера******************************/
+TimerClock timer;
 
 enum ElementTimer {
   START,
@@ -153,7 +154,7 @@ void countdown_timer(void) {
   }
   // Вкл. вектор прерывания
   cli();
-  TCNT1 = 0x00;             // Устанавливаем счетный регистр
+  TCNT1 = 0x00;              // Устанавливаем счетный регистр
   TIMSK1 |= (1 << OCIE1A);   // Interupt On
   sei();
   bool flag = false;
@@ -346,7 +347,6 @@ void draw_led(int8_t &param, const MenuLevel &level) {
       display.drawRoundRect(28, 21, 35, 11, 3, WHITE);
       display.print(F("  "));
       display.print(F("EDIT"));
-      break;
       break;
   }
   display.display();
