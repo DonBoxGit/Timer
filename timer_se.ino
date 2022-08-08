@@ -4,17 +4,17 @@
  *                  Add class TimerClock                                      *
  *                          by Roman Yakubovskiy                              *
  ******************************************************************************/
-#define SLK                   3            // Пин SLK(S2) Энкодера
 #define DT                    2            // Пин DT(S1)  Энкодера
+#define SLK                   3            // Пин SLK(S2) Энкодера
 #define SW                    4            // Пин Кнопки Энкодера
-#define OLED_RESET            4            // Пин Сброса Дисплея (Если Нет: -1)
+#define OLED_RESET           -1            // Пин Сброса Дисплея (Если Нет: -1)
 #define DISPLAY_I2C_ADDR      0x3C         // I2C Адрес SSD1306 Экрана
 #define SPEAKER_PIN           12           // Пин Пьезоизлучателя
 #define OUT_PIN               10           // Пин Реле
 #define MESSAGE       "CHICKEN IS COOKED!" // Сообщение Таймера
 #define TONE                  1000         // Тон Спикера
-#define REMAINING_TIME_SIGNAL 3            // Cигнализация Остатка Времени(3 сек.)
-#define MIN_TIME_START        5            // Минимальное Время для Старта Отсчета Времени
+#define REMAINING_TIME_SIGNAL 3            // Cигнализация Остатка Времени (3 сек.)
+#define MIN_TIME_START        5            // Минимальное Время для Старта Отсчета Времени (не меньше 5 сек.)
 
 #include <Adafruit_SSD1306.h>
 #include <GyverEncoder.h>
@@ -47,7 +47,7 @@ enum MenuLevel {
 };
 
 MenuLevel menuLevel      = MAIN;
-int8_t val = 0;
+int8_t val               = 0;
 volatile bool timerClick = false; // Переменная отсчета времени в прерывании
 
 void setup() {
@@ -75,10 +75,10 @@ void setup() {
   sei();                      // Включить Глобальное Прерывание
   delay(1000);
   timer.readRomTime();        // Считываем Время из EEPROM
-  draw_led(val, menuLevel);
+  draw_led(val, menuLevel);   // Рисуем Первый Экран
 }
 
-/**********************Вектро Прерывания TIMER1*****************************/
+/**********************Вектор Прерывания TIMER1*****************************/
 ISR (TIMER1_COMPA_vect) {
   timerClick = true;
 }
@@ -157,7 +157,7 @@ void countdown_timer(void) {
   TCNT1 = 0x00;              // Устанавливаем счетный регистр
   TIMSK1 |= (1 << OCIE1A);   // Interupt On
   sei();
-  bool flag = false;
+  bool flagStart = false;
   while (true) {
     encoder.tick();
     if (encoder.isClick() && menuLevel == COUNTDOWN && val == STOP) { // Если нажали STOP
@@ -170,9 +170,11 @@ void countdown_timer(void) {
     if (timer.getTime(timer.HOURS)   == 0 &&
         timer.getTime(timer.MINUTES) == 0 &&
         timer.getTime(timer.SECONDS) == 0) { // Если закончилось время отсчета: выход из цикла
+      digitalWrite(OUT_PIN, HIGH);
       tone(SPEAKER_PIN, TONE, 1000);
       menuLevel = MESSAGE_SCREEN;
       draw_led(val, menuLevel);
+      timer.readRomTime();
       delay(1000);
       menuLevel = MAIN;
       val = START;
@@ -180,7 +182,7 @@ void countdown_timer(void) {
       digitalWrite(OUT_PIN, LOW);
       break;
     }
-    if (!flag) {flag = true; timerClick = false;} // Предотвращение отсчета сразу
+    if (!flagStart) {flagStart = true; timerClick = false;} // Предотвращение отсчета сразу
     // Таймер обратного отсчета
     if (timerClick) {
       timerClick = false;
@@ -193,9 +195,9 @@ void countdown_timer(void) {
           if (timer.getTime(timer.HOURS) != 0) {
             timer.changeTime(timer.HOURS, false);
           }
-          timer.changeTime(timer.MINUTES, static_cast<int8_t>(59));
+          timer.changeTime(timer.MINUTES, 59ui);
         }
-        timer.changeTime(timer.SECONDS, static_cast<int8_t>(59));
+        timer.changeTime(timer.SECONDS, 59ui);
       }
       if (timer.getTime(timer.HOURS)   == 0 &&  // Сигнализация остатка времени
           timer.getTime(timer.MINUTES) == 0 &&
