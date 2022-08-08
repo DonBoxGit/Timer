@@ -18,9 +18,9 @@ class TimerClock {
     void   changeTime    (const TimerClock::Element&, bool);
     
   private:
- uint8_t   hours   = 0;
- uint8_t   minutes = 0;
- uint8_t   seconds = 0;
+    uint8_t   hours   = 0;
+    uint8_t   minutes = 0;
+    uint8_t   seconds = 0;
  
     void   ctrlRange     (const TimerClock::Element&, int8_t*);
 };
